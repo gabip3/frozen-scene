@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Novembra · The Thaw · São Paulo 2026</title>
+  <meta name="description"
+        content="Cena web interativa: uma artista presa no gelo, revelada só pelo esforço de quem toca a tela. O gelo nunca quebra antes da data." />
+
+  <!-- Card de compartilhamento (WhatsApp, iMessage, redes).
+       [SUBSTITUIR: og] assets/og.jpg é montado a partir dos próprios
+       assets da cena. Regerar se a arte mudar. -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Defrost her until it's time" />
+  <meta property="og:description"
+        content="Uma artista presa no gelo. Cada gesto derrete um pouco. Mas o gelo só cede na data." />
+  <meta property="og:url" content="https://gabip3.github.io/frozen-scene/" />
+  <meta property="og:image" content="https://gabip3.github.io/frozen-scene/assets/og.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Uma figura congelada dentro de um bloco de gelo" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Defrost her until it's time" />
+  <meta name="twitter:description"
+        content="Uma artista presa no gelo. Cada gesto derrete um pouco. Mas o gelo só cede na data." />
+  <meta name="twitter:image" content="https://gabip3.github.io/frozen-scene/assets/og.jpg" />
+  <meta name="theme-color" content="#0B1930" />
+
+  <!-- Preload dos assets essenciais do primeiro frame -->
+  <link rel="preload" as="image" href="assets/background.webp" type="image/webp" />
+  <link rel="preload" as="image" href="assets/ice_back.webp" type="image/webp" />
+  <link rel="preload" as="image" href="assets/figure.webp" type="image/webp" />
+  <link rel="preload" as="image" href="assets/ice_front.webp" type="image/webp" />
+  <link rel="preload" as="image" href="assets/condensation.webp" type="image/webp" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&family=IBM+Plex+Mono:wght@300;400;500&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <!-- ================================================================
+       CENA 01 — FROZEN
+       Camadas independentes (z-index crescente). Cada .layer é um
+       slot: para trocar o asset, substitua só o conteúdo interno
+       (src do <img>, ou <video>/sequência). A animação seleciona por
+       data-layer, então nada precisa ser reescrito no JS.
+
+       Masters PNG em assets/src/ · versões WebP otimizadas em assets/
+       ================================================================ -->
+  <section class="scene" id="scene-frozen" aria-label="Artista congelada dentro de um bloco de gelo">
+
+    <!-- ── LAYER 1 · BACKGROUND ─────────────────────────────────────
+         [SUBSTITUIR: background] troque o src (ou use <video>). -->
+    <div class="layer layer--bg" data-layer="bg" aria-hidden="true">
+      <img class="layer-img" src="assets/background.webp" alt="" decoding="async" />
+    </div>
+
+    <!-- ── LAYER 2 · ATMOSFERA / NÉVOA TRASEIRA ─────────────────────
+         [SUBSTITUIR: névoa] troque os .fog-blob por WebM com alpha
+         (ou PNG em fundo preto + mix-blend-mode: screen). -->
+    <div class="layer layer--fog-back" data-layer="fog-back" aria-hidden="true">
+      <div class="fog-blob fog-blob--a"></div>
+      <div class="fog-blob fog-blob--b"></div>
+    </div>
+
+    <!-- ── LAYER 3 · GELO ATRÁS DA PERSONAGEM ───────────────────────
+         [SUBSTITUIR: gelo traseiro] plate completo, sem alpha. -->
+    <div class="layer layer--ice-back" data-layer="ice-back" aria-hidden="true">
+      <img class="layer-img" src="assets/ice_back.webp" alt="" decoding="async" />
+    </div>
+
+    <!-- ── LAYER 4 · PERSONAGEM ─────────────────────────────────────
+         [SUBSTITUIR: personagem]
+         Duas cópias do MESMO asset (fundo preto → mix-blend-mode:
+         screen; se vier PNG com alpha, remova o blend em .figure):
+           .figure-blur  → "vista através do gelo" (blur via CSS)
+           .figure-sharp → nítida, ganha presença com o scroll
+         Mockup atual: silhueta anônima. Troque pelo asset real da
+         a artista nos dois <img>. -->
+    <div class="layer layer--figure" data-layer="figure" aria-hidden="true">
+      <!-- Penumbra colada na silhueta: sem ela o vestido escuro se
+           dissolve na caverna clara. Fica DENTRO da camada da figura
+           (e não em tela cheia) para nunca virar um vazio no quadro. -->
+      <div class="figure figure-scrim"></div>
+      <div class="figure figure-blur">
+        <img class="figure-img" src="assets/figure.webp" alt="" decoding="async" />
+      </div>
+      <div class="figure figure-sharp">
+        <img class="figure-img" src="assets/figure.webp" alt="" decoding="async" />
+      </div>
+    </div>
+
+    <!-- ── LAYER 5 · GELO TRANSPARENTE NA FRENTE ────────────────────
+         [SUBSTITUIR: gelo frontal] placa em fundo preto; o CSS aplica
+         mix-blend-mode: screen (preto vira transparente). A opacidade
+         é controlada pelo scroll. -->
+    <div class="layer layer--ice-front" data-layer="ice-front" aria-hidden="true">
+      <img class="layer-img" src="assets/ice_front.webp" alt="" decoding="async" />
+    </div>
+
+    <!-- ── LAYER 6 · CONDENSAÇÃO / FROST — INTERATIVA ───────────────
+         [SUBSTITUIR: condensação] troque o data-src pela textura
+         desejada (qualquer imagem opaca de vidro embaçado).
+         O canvas desenha essa textura com uma máscara de "cobertura":
+         o dedo/mouse apaga a cobertura por onde passa (revelando o que
+         está atrás) e ela reembaça sozinha com o tempo. O scroll define
+         o nível ambiente (espesso a −20°C, fino a 0°C). Lógica em
+         initFrost() no main.js. -->
+    <div class="layer layer--condensation" data-layer="condensation"
+         data-src="assets/condensation.webp" aria-hidden="true">
+      <canvas class="frost-canvas" id="frost-canvas"></canvas>
+    </div>
+
+    <!-- ── LAYER 7 · RACHADURAS AMBIENTE ────────────────────────────
+         [SUBSTITUIR: rachaduras]
+         Geradas em buildAmbientCracks() (main.js) com a mesma
+         geometria quebradiça das rachaduras do martelo: nascem nas
+         bordas do quadro e crescem para dentro, com forquilhas. O
+         viewBox é em pixels, então cobrem bem tanto o quadro
+         landscape quanto o crop vertical do celular.
+         Para usar arte própria, troque o conteúdo deste <svg> por
+         paths com class="crack" — o JS mede e anima sozinho. -->
+    <div class="layer layer--cracks" data-layer="cracks" aria-hidden="true">
+      <svg class="cracks-svg" id="cracks-svg" fill="none"></svg>
+    </div>
+
+    <!-- ── LAYER 7b · RACHADURAS DE IMPACTO ─────────────────────────
+         Geradas pelo martelo, a partir do ponto exato do toque.
+         Elas SEMPRE se refazem — o gelo só cede na data (ver
+         CONFIG.reveal em main.js). O viewBox é ajustado em pixels
+         para que as coordenadas do dedo mapeiem 1:1. -->
+    <div class="layer layer--impact" data-layer="impact" aria-hidden="true">
+      <svg class="impact-svg" id="impact-svg" fill="none"></svg>
+    </div>
+
+    <!-- ── LAYER 8 · PARTÍCULAS / CRISTAIS ──────────────────────────
+         [SUBSTITUIR: partículas] geradas em createParticles(). -->
+    <div class="layer layer--particles" data-layer="particles" aria-hidden="true"></div>
+
+    <!-- ── LAYER 8b · BORBOLETAS-MONARCA ────────────────────────────
+         [SUBSTITUIR: borboletas] markup em butterflySVG() (main.js).
+         Asas em duas versões: .wing-ice (azul) e .wing-monarch
+         (laranja) — o scroll faz o cross-fade perto de 0°C. -->
+    <div class="layer layer--butterflies" data-layer="butterflies" aria-hidden="true"></div>
+
+    <!-- ── LAYER 2b · NÉVOA FRONTAL (profundidade extra) ────────────
+         [SUBSTITUIR: névoa] — mesmo tratamento da névoa traseira -->
+    <div class="layer layer--fog-front" data-layer="fog-front" aria-hidden="true">
+      <div class="fog-blob fog-blob--c"></div>
+    </div>
+
+    <!-- Clarão do impacto do martelo -->
+    <div class="layer layer--flash" data-layer="flash" aria-hidden="true"></div>
+
+    <!-- Vinheta + grão de filme (linguagem cinematográfica, estático) -->
+    <div class="layer layer--vignette" aria-hidden="true"></div>
+    <div class="layer layer--grain" aria-hidden="true">
+      <svg width="100%" height="100%">
+        <filter id="grain">
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3" />
+          <feColorMatrix type="matrix"
+            values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0.35 0.35 0.35 0 -0.45" />
+        </filter>
+        <rect width="100%" height="100%" filter="url(#grain)" />
+      </svg>
+    </div>
+
+    <!-- ── LAYER 9 · TIPOGRAFIA ─────────────────────────────────────
+         [SUBSTITUIR: nome] artista fictícia, desenhada em tipografia.
+         Para uma marca real, troque por <img> com o lockup dela. -->
+    <header class="layer layer--type" data-layer="type">
+      <div class="credit">
+        <h1 class="credit__name">Novembra</h1>
+        <p class="credit__title">The&nbsp;Thaw</p>
+        <p class="credit__meta">São&nbsp;Paulo&nbsp;·&nbsp;2026</p>
+      </div>
+    </header>
+
+    <!-- Ressalva: peça autoral, artista fictícia, figura gerada por IA -->
+    <p class="disclaimer">Concept piece · fictional artist · AI-generated figure</p>
+
+    <!-- ── LAYER 10 · TEMPERATURA (°C e °F — ela é global) ──────────-->
+    <div class="layer layer--temp" data-layer="temp" role="status" aria-live="off">
+      <div class="temp">
+        <div class="temp__readout">
+          <span class="temp__value" id="temp-c">−20°C</span>
+          <span class="temp__value" id="temp-f">−4°F</span>
+        </div>
+        <span class="temp__track"><span class="temp__fill" id="temp-fill"></span></span>
+      </div>
+      <!-- Aparece quando o usuário insiste no martelo: o gelo resiste -->
+      <p class="gate" id="gate-line" hidden></p>
+    </div>
+
+    <!-- ── BANDEJA DE INSTRUMENTOS ──────────────────────────────────
+         Zona do polegar no mobile. Cada instrumento tem um verbo:
+         mão = arrastar · martelo = tocar · leque = deslizar -->
+    <div class="layer layer--tools" data-layer="tools">
+      <p class="tools__hint">Choose your tool</p>
+      <div class="tools" role="group" aria-label="Instrumentos">
+        <button class="tool is-active" type="button" data-tool="hand" aria-pressed="true">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M9.5 12V6a1.5 1.5 0 0 1 3 0v5M12.5 11V4.5a1.5 1.5 0 0 1 3 0V12M15.5 12V7.5a1.5 1.5 0 0 1 3 0V15c0 3.3-2.7 6-6 6h-1c-2 0-3.4-.8-4.5-2.4L4.8 14a1.5 1.5 0 0 1 2.4-1.8l2.3 2.3"/>
+          </svg>
+          <span class="tool__label">Hand</span>
+        </button>
+        <button class="tool" type="button" data-tool="hammer" aria-pressed="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12.2 8.6l4.2-4.2a1 1 0 0 1 1.4 0l2.8 2.8a1 1 0 0 1 0 1.4l-4.2 4.2z"/>
+            <path d="M13.4 11.4L4 20.8"/>
+          </svg>
+          <span class="tool__label">Pick</span>
+        </button>
+        <button class="tool" type="button" data-tool="fan" aria-pressed="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M2.6 15.6a10 10 0 0 1 18.8 0L12 19z"/>
+            <path d="M12 19L5.6 11.3M12 19V9M12 19l6.4-7.7"/>
+          </svg>
+          <span class="tool__label">Fan</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- GSAP (sem ScrollTrigger: a cena não usa scroll) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,512 @@
+/* ==================================================================
+   NOVEMBRA · THE THAW · Cena 01: FROZEN
+   Tokens + camadas. Cada camada é um slot substituível por asset
+   real (PNG/WebP/AVIF/vídeo/sequência) sem tocar na animação.
+   ================================================================== */
+
+:root {
+  /* Paleta fria — nada quente nesta fase */
+  --abyss:      #04070F;  /* fundo absoluto */
+  --deep:       #0B1930;  /* azul profundo */
+  --steel:      #16324A;  /* meio-tom */
+  --ice:        #9CC3E0;  /* gelo médio */
+  --frost:      #D9EDF8;  /* gelo claro */
+  --glint:      #EAF7FF;  /* brilho especular */
+
+  /* Tipografia */
+  --font-display: "Bodoni Moda", "Didot", serif;
+  --font-utility: "IBM Plex Mono", "SFMono-Regular", monospace;
+
+  /* Margem interna do "frame de filme" */
+  --frame-pad: clamp(20px, 3.5vw, 56px);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* A cena não usa scroll: o esforço com os instrumentos é o motor. */
+html, body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body {
+  background: var(--abyss);
+  color: var(--frost);
+  font-family: var(--font-utility);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ==================================================================
+   CENA — palco fullscreen pinado (o pin é feito pelo ScrollTrigger)
+   ================================================================== */
+.scene {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  height: 100svh;                 /* mobile: barra de URL */
+  overflow: hidden;
+  /* sem scroll na página: o navegador não rouba o gesto, então o
+     dedo controla o descongelamento inteiro. */
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.layer {
+  position: absolute;
+  inset: 0;
+  /* as camadas são decorativas: o toque cai direto na .scene */
+  pointer-events: none;
+}
+/* NÃO colocar will-change aqui: são 16 camadas fullscreen, e forçar
+   uma textura de GPU para cada uma estoura a memória de composição no
+   celular — a maior delas falha ao rasterizar e vira preto sólido.
+   Só borboletas e partículas animam transform, e elas já declaram. */
+
+/* Imagens de camada inteira (bg, gelo traseiro, gelo frontal) */
+.layer-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ── LAYER 1 · BACKGROUND ────────────────────────────────────────── */
+.layer--bg { transform-origin: 50% 40%; }
+
+/* ── LAYER 2 · NÉVOA ───────────────────────────────────────────────
+   [SUBSTITUIR: névoa] troque .fog-blob por WebM com alpha ou WebP. */
+.fog-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);             /* estático — renderiza uma vez */
+  animation: fog-drift 26s ease-in-out infinite alternate;
+}
+.fog-blob--a {
+  width: 70vw; height: 45vh; left: -12vw; top: 8vh;
+  background: radial-gradient(closest-side, rgba(156,195,224,.14), transparent 70%);
+}
+.fog-blob--b {
+  width: 65vw; height: 50vh; right: -15vw; bottom: 4vh;
+  background: radial-gradient(closest-side, rgba(127,169,201,.11), transparent 70%);
+  animation-duration: 34s;
+  animation-delay: -12s;
+}
+.fog-blob--c {
+  width: 90vw; height: 34vh; left: 5vw; bottom: -10vh;
+  background: radial-gradient(closest-side, rgba(217,237,248,.08), transparent 70%);
+  animation-duration: 40s;
+  animation-delay: -20s;
+}
+@keyframes fog-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(6vw, -3vh, 0); }
+}
+
+/* ── LAYER 4 · PERSONAGEM ──────────────────────────────────────────
+   [SUBSTITUIR: personagem] as duas .figure recebem o MESMO asset.
+   Asset em fundo preto → screen. Asset com alpha → remova o blend. */
+.layer--figure {
+  display: grid;
+  place-items: end center;        /* personagem "pisa" no chão do frame */
+  transform-origin: 50% 65%;
+  /* A figura usa alpha real (assets/figure.webp, recorte do preto via
+     ffmpeg colorkey). Não usar mix-blend-mode aqui: "screen" só soma
+     luz e a personagem some sobre a caverna clara. */
+}
+.figure {
+  grid-area: 1 / 1;               /* cópias empilhadas */
+  height: min(92vh, 92svh);
+  aspect-ratio: 747 / 1532;       /* proporção do asset atual */
+  max-width: 70vw;
+}
+
+/* Penumbra atrás dela — opacidade controlada por applyReveal().
+   Escalada para além da silhueta: colada nela fica estreita demais
+   e a caverna clara continua engolindo o vestido escuro. */
+.figure-scrim {
+  opacity: 0;
+  transform: scale(1.9, 1.14);
+  background: radial-gradient(closest-side,
+              rgba(2,6,14,.72) 0%, rgba(2,6,14,.38) 50%, transparent 80%);
+}
+
+.figure-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: bottom center;
+  display: block;
+}
+
+/* Cópia "atrás do gelo": blur ESTÁTICO (não animamos filter, só a
+   opacity das duas cópias — cross-fade barato em GPU). */
+/* Escurecer demais faz a área limpa virar um vazio preto: a cópia
+   borrada precisa continuar legível como "corpo dentro do gelo". */
+.figure-blur  { filter: blur(7px) brightness(1) saturate(.8); }
+.figure-sharp { opacity: 0; }     /* revelada pelo scroll */
+
+/* ── LAYER 5 · GELO FRONTAL ──────────────────────────────────────── */
+/* O asset tem alpha derivado do próprio brilho (gelo translúcido:
+   claro = opaco, escuro = transparente). NÃO usar mix-blend-mode aqui:
+   o filter da personagem isola o grupo de blend e o screen passa a
+   compor contra preto, apagando a caverna de gelo atrás. */
+.layer--ice-front { transform-origin: 50% 50%; }
+
+/* ── LAYER 6 · CONDENSAÇÃO INTERATIVA ──────────────────────────────
+   O canvas cobre o frame; o JS controla textura × máscara. */
+.frost-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ── LAYER 7 · RACHADURAS ────────────────────────────────────────── */
+.layer--cracks { opacity: 0; }    /* aparecem a partir de ~60% */
+.cracks-svg { width: 100%; height: 100%; display: block; }
+/* mesma linguagem das rachaduras de impacto: fio fino e quebradiço */
+.crack {
+  stroke: var(--glint);
+  stroke-linecap: round;
+  stroke-linejoin: miter;
+  filter: drop-shadow(0 0 2px rgba(190,225,250,.45));
+}
+
+/* ── LAYER 8 · PARTÍCULAS ────────────────────────────────────────── */
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--glint);
+  will-change: transform, opacity;
+  animation: particle-float linear infinite;
+}
+@keyframes particle-float {
+  0%   { transform: translate3d(0, 0, 0);          opacity: 0; }
+  15%  { opacity: var(--p-alpha, .5); }
+  85%  { opacity: var(--p-alpha, .5); }
+  100% { transform: translate3d(var(--p-dx, 2vw), var(--p-dy, -14vh), 0); opacity: 0; }
+}
+
+/* ── LAYER 8b · BORBOLETAS-MONARCA ─────────────────────────────────
+   [SUBSTITUIR: borboletas] fotos recortadas em assets/butterfly_*.webp
+   (markup em butterflyMarkup(), main.js).
+   · voo = GSAP (transform no .butterfly)
+   · asa = cross-fade entre as duas poses de topo (lê como blur)
+   Monarca é sempre laranja — nunca tingir de azul. */
+.butterfly {
+  position: absolute;
+  will-change: transform;
+}
+.bf-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.bf-frame--a { animation: flap-a var(--flap, .26s) ease-in-out infinite; }
+.bf-frame--b { animation: flap-b var(--flap, .26s) ease-in-out infinite; }
+.bf-frame--a, .bf-frame--b { animation-delay: var(--flap-delay, 0s); }
+@keyframes flap-a { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+@keyframes flap-b { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+
+/* ── LAYER 7b · RACHADURAS DE IMPACTO (martelo) ──────────────────── */
+.impact-svg { width: 100%; height: 100%; display: block; }
+.impact-crack {
+  stroke: var(--glint);
+  stroke-linecap: round;
+  stroke-linejoin: miter;
+  fill: none;
+  filter: drop-shadow(0 0 2px rgba(190,225,250,.5));
+}
+
+/* Clarão do impacto */
+.layer--flash {
+  background: radial-gradient(closest-side, rgba(234,247,255,.9), transparent 70%);
+  opacity: 0;
+  mix-blend-mode: screen;
+}
+
+/* Ressalva de conceito — discreta, mas sempre legível */
+.disclaimer {
+  position: absolute;
+  right: var(--frame-pad);
+  bottom: calc(var(--frame-pad) * .55);
+  max-width: 46vw;
+  text-align: right;
+  font-size: .46rem;
+  font-weight: 300;
+  letter-spacing: .22em;
+  line-height: 1.8;
+  text-transform: uppercase;
+  color: rgba(156,195,224,.42);
+  pointer-events: none;
+}
+
+/* ══ BANDEJA DE INSTRUMENTOS ═════════════════════════════════════ */
+.layer--tools {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: .85em;
+  padding: 0 var(--frame-pad) calc(var(--frame-pad) * .75);
+  opacity: 0;                    /* GSAP revela (ver initTools) */
+}
+.tools__hint {
+  font-size: .55rem;
+  font-weight: 300;
+  letter-spacing: .42em;
+  text-transform: uppercase;
+  color: rgba(217,237,248,.55);
+  padding-left: .42em;            /* compensa o tracking à direita */
+}
+
+.tools {
+  display: flex;
+  gap: clamp(4px, 1.6vw, 14px);
+  padding: 6px;
+  border: 1px solid rgba(156,195,224,.16);
+  background: rgba(4,10,20,.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.tool {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  width: 56px;
+  padding: 9px 4px 7px;
+  background: none;
+  border: 0;
+  color: rgba(217,237,248,.5);
+  font-family: inherit;
+  cursor: pointer;
+  transition: color .3s ease, background-color .3s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.tool svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  stroke-width: 1.35;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+.tool__label {
+  font-size: .46rem;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  padding-left: .28em;             /* compensa o tracking à direita */
+}
+.tool:hover { color: rgba(217,237,248,.8); }
+.tool:focus-visible {
+  outline: 1px solid var(--ice);
+  outline-offset: 2px;
+}
+.tool.is-active {
+  color: var(--glint);
+  background: rgba(156,195,224,.1);
+}
+
+/* ── Vinheta + grão (linguagem de filme) ─────────────────────────── */
+.layer--vignette {
+  background:
+    radial-gradient(120% 100% at 50% 50%, transparent 55%, rgba(2,4,10,.75) 100%),
+    linear-gradient(180deg, rgba(2,4,10,.5) 0%, transparent 12%, transparent 88%, rgba(2,4,10,.6) 100%);
+}
+.layer--grain {
+  opacity: .05;
+  mix-blend-mode: overlay;
+}
+.layer--grain svg, .layer--grain rect { width: 100%; height: 100%; }
+
+/* ==================================================================
+   LAYER 9 · TIPOGRAFIA — crédito de filme, discreto
+   ================================================================== */
+.layer--type {
+  padding: var(--frame-pad);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-start;      /* o bloco encolhe até o conteúdo */
+}
+
+/* Os lockups se centram entre si, não à esquerda */
+.credit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* Nome da artista (fictícia), em tipografia.
+   Para uma marca real, troque por <img> com o lockup dela. */
+.credit__name {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(2rem, 4.4vw, 4.1rem);
+  line-height: 1;
+  letter-spacing: .3em;
+  text-transform: uppercase;
+  color: var(--frost);
+  text-shadow: 0 0 26px rgba(156,195,224,.4);
+  padding-left: .3em;               /* compensa o tracking à direita */
+}
+.credit__title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-style: italic;
+  font-size: clamp(.92rem, 1.5vw, 1.4rem);
+  letter-spacing: .5em;
+  text-transform: uppercase;
+  color: var(--ice);
+  margin-top: .9em;
+  padding-left: .5em;
+}
+.credit__meta {
+  font-size: clamp(.58rem, .8vw, .72rem);
+  font-weight: 300;
+  letter-spacing: .5em;
+  text-transform: uppercase;
+  color: rgba(156,195,224,.55);
+  margin-top: 1.6em;
+  padding-left: .5em;             /* compensa o tracking à direita */
+}
+
+/* ==================================================================
+   LAYER 10 · TEMPERATURA — HUD discreto, canto superior direito
+   ================================================================== */
+.layer--temp {
+  padding: var(--frame-pad);
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+}
+.layer--temp {
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-start;   /* coluna: alinha no topo */
+  gap: .9em;
+}
+.temp {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.temp__readout {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: .35em;
+}
+.temp__value {
+  font-size: clamp(.78rem, 1.05vw, .95rem);
+  font-weight: 400;
+  letter-spacing: .22em;
+  color: var(--frost);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+/* Linha do "o gelo resiste" — só aparece depois de insistir */
+.gate {
+  font-size: clamp(.5rem, .68vw, .6rem);
+  font-weight: 300;
+  letter-spacing: .38em;
+  text-transform: uppercase;
+  color: rgba(156,195,224,.7);
+  text-align: right;
+  max-width: 14em;
+  line-height: 1.7;
+}
+.temp__track {
+  position: relative;
+  width: 2px;
+  height: clamp(64px, 10vh, 110px);
+  background: rgba(156,195,224,.18);
+  overflow: hidden;
+}
+.temp__fill {
+  position: absolute;
+  left: 0; bottom: 0;
+  width: 100%; height: 0%;
+  background: linear-gradient(180deg, var(--glint), var(--ice));
+}
+
+/* ==================================================================
+   MOBILE — composição vertical (~360–430px), a artista no centro
+   ================================================================== */
+@media (max-width: 700px) {
+  :root { --frame-pad: 20px; }
+
+  /* a artista domina o quadro vertical, mas a cabeça precisa passar por
+     baixo da tipografia — por isso desce e a cauda sai do quadro
+     (ela já ficava atrás da bandeja de qualquer forma). */
+  .figure {
+    height: min(78vh, 78svh);
+    max-width: 100vw;
+  }
+  .layer--figure { transform: translateY(8vh); }
+
+  /* Menos blur = mais FPS em GPU mobile */
+  .figure-blur { filter: blur(5px) brightness(1) saturate(.8); }
+  .fog-blob { filter: blur(36px); }
+
+  /* Crédito centralizado no topo — a bandeja ocupa o rodapé */
+  .layer--type {
+    justify-content: flex-start;
+    align-items: center;
+    text-align: center;
+    padding-top: calc(var(--frame-pad) + 4px);
+  }
+  .credit__name { letter-spacing: .2em; padding-left: .2em; }
+  .credit__title { letter-spacing: .36em; padding-left: .36em; }
+  /* o tracking sobra à direita: compensa para centrar de fato */
+  .credit__meta { padding-left: .5em; margin-top: 1.1em; }
+
+  /* Termômetro desce para o canto inferior esquerdo, livre da logo */
+  .layer--temp {
+    justify-content: flex-end;
+    align-items: flex-start;
+  }
+  .temp { gap: 10px; }
+  .temp__track { height: 56px; }
+  .gate { letter-spacing: .28em; max-width: 9em; text-align: left; }
+
+  /* no vertical a ressalva sobe para não brigar com a bandeja */
+  .disclaimer {
+    left: 0;
+    right: 0;
+    bottom: auto;
+    top: 9px;
+    max-width: none;
+    text-align: center;
+    font-size: .4rem;
+    letter-spacing: .16em;
+    white-space: nowrap;
+  }
+  /* e o crédito desce o suficiente para não encostar nela */
+  .layer--type { padding-top: calc(var(--frame-pad) + 20px); }
+
+  /* Alvos de toque confortáveis no polegar */
+  .tools { gap: 2px; padding: 5px; }
+  .tool { width: 62px; padding: 10px 4px 8px; }
+  .tool svg { width: 24px; height: 24px; }
+
+}
+
+/* ==================================================================
+   ACESSIBILIDADE — reduz movimento ambiente. O scrub e o frost
+   seguem o dedo do usuário, então continuam permitidos.
+   ================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .fog-blob, .particle,
+  .bf-frame--a, .bf-frame--b { animation: none; }
+  .bf-frame--b { opacity: 0; }
+}

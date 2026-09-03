@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Gabriella Costa · Experiências web interativas</title>
+
+
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Uma experiência web que o público destrava com o dedo" />
+<meta property="og:description" content="Estudo de caso: cena interativa mobile-first, com mecânica de toque e trava de data." />
+<meta property="og:url" content="https://gabip3.github.io/frozen-scene/case/" />
+<meta property="og:image" content="https://gabip3.github.io/frozen-scene/assets/og.jpg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="theme-color" content="#0B1930" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+
+<style>
+:root{
+  --abyss:#04070F; --deep:#0B1930; --steel:#16324A;
+  --ice:#9CC3E0; --frost:#D9EDF8; --glint:#EAF7FF;
+  --display:"Bodoni Moda",Didot,serif;
+  --mono:"IBM Plex Mono",SFMono-Regular,monospace;
+  --pad:clamp(24px,6vw,90px);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:var(--abyss);color:var(--frost);
+  font-family:var(--mono);font-weight:300;font-size:clamp(.82rem,1.05vw,.94rem);
+  line-height:1.85;-webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(120% 70% at 50% 0%,rgba(22,50,74,.55) 0%,transparent 62%);
+  background-repeat:no-repeat;
+}
+.wrap{max-width:1080px;margin:0 auto;padding:var(--pad)}
+
+/* ── cabeçalho ───────────────────────────────────────────── */
+.eyebrow{
+  font-size:.56rem;letter-spacing:.46em;text-transform:uppercase;
+  color:rgba(156,195,224,.6);padding-left:.46em;
+}
+h1{
+  font-family:var(--display);font-weight:500;
+  font-size:clamp(2.1rem,6.4vw,4.6rem);line-height:1.06;
+  letter-spacing:-.01em;margin:.5em 0 .34em;max-width:16ch;
+}
+.lede{max-width:56ch;color:rgba(217,237,248,.78)}
+
+/* ── demo ────────────────────────────────────────────────── */
+.demo{
+  display:block;margin:clamp(40px,7vw,80px) 0;
+  border:1px solid rgba(156,195,224,.2);
+  position:relative;overflow:hidden;text-decoration:none;color:inherit;
+  transition:border-color .4s ease;
+}
+.demo:hover,.demo:focus-visible{border-color:rgba(156,195,224,.55);outline:none}
+.demo img{width:100%;height:auto;display:block}
+.demo__bar{
+  display:flex;justify-content:space-between;align-items:center;gap:1em;
+  padding:14px clamp(14px,2.4vw,22px);
+  border-top:1px solid rgba(156,195,224,.16);
+  font-size:.58rem;letter-spacing:.3em;text-transform:uppercase;
+  color:rgba(217,237,248,.72);
+}
+.demo__bar span:last-child{white-space:nowrap;color:var(--glint)}
+
+/* ── seções ──────────────────────────────────────────────── */
+section{margin:clamp(48px,8vw,96px) 0}
+h2{
+  font-family:var(--display);font-weight:400;font-style:italic;
+  font-size:clamp(1.25rem,2.6vw,1.9rem);letter-spacing:.02em;
+  color:var(--frost);margin-bottom:1.4em;
+}
+p+p{margin-top:1.2em}
+.prose{max-width:62ch;color:rgba(217,237,248,.8)}
+strong{font-weight:500;color:var(--glint)}
+
+/* ── blocos numerados ────────────────────────────────────── */
+.beats{
+  display:grid;gap:clamp(22px,3.4vw,40px);
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  border-top:1px solid rgba(156,195,224,.16);padding-top:clamp(26px,3.6vw,40px);
+}
+.beat__n{
+  font-size:.56rem;letter-spacing:.4em;color:rgba(156,195,224,.55);
+  display:block;margin-bottom:1.1em;
+}
+.beat h3{
+  font-family:var(--display);font-weight:400;font-size:1.06rem;
+  letter-spacing:.01em;margin-bottom:.7em;color:var(--frost);
+}
+.beat p{font-size:.8rem;line-height:1.8;color:rgba(217,237,248,.72)}
+
+/* ── decisões técnicas ───────────────────────────────────── */
+.specs{list-style:none;max-width:66ch}
+.specs li{
+  padding:1.15em 0;border-top:1px solid rgba(156,195,224,.14);
+  display:grid;gap:.2em .9em;
+  grid-template-columns:minmax(0,15ch) 1fr;
+}
+.specs li:last-child{border-bottom:1px solid rgba(156,195,224,.14)}
+.specs dt,.specs b{
+  font-size:.58rem;letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(156,195,224,.72);font-weight:400;padding-top:.35em;
+}
+.specs span{font-size:.82rem;line-height:1.8;color:rgba(217,237,248,.76)}
+@media(max-width:620px){.specs li{grid-template-columns:1fr}}
+
+/* ── contato ─────────────────────────────────────────────── */
+.contact{
+  border-top:1px solid rgba(156,195,224,.2);
+  padding-top:clamp(26px,3.6vw,40px);
+  display:flex;flex-wrap:wrap;gap:1.2em 2.6em;align-items:baseline;
+}
+.contact a{
+  color:var(--glint);text-decoration:none;
+  border-bottom:1px solid rgba(234,247,255,.32);
+  padding-bottom:.15em;transition:border-color .3s ease;
+}
+.contact a:hover,.contact a:focus-visible{border-color:var(--glint);outline:none}
+
+.foot{
+  margin-top:clamp(40px,6vw,72px);
+  font-size:.54rem;letter-spacing:.22em;text-transform:uppercase;
+  color:rgba(156,195,224,.4);line-height:2;max-width:64ch;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">Estudo de caso · 2026</p>
+    <h1>Uma experiência que o público destrava com o dedo</h1>
+    <p class="lede">
+      Construí uma cena web interativa em que a artista aparece presa num
+      bloco de gelo e só é revelada pelo esforço de quem está do outro
+      lado da tela. Sem scroll, sem vídeo: tudo acontece ao vivo no
+      navegador, no celular, com o dedo.
+    </p>
+  </header>
+
+  <a class="demo" href="../?v=2" target="_blank" rel="noopener">
+    <img src="../assets/og.jpg" alt="Figura congelada dentro de um bloco de gelo, vista através do vidro embaçado" />
+    <p class="demo__bar">
+      <span>Abrir a demonstração · melhor no celular</span>
+      <span>↗</span>
+    </p>
+  </a>
+
+  <section>
+    <h2>A ideia</h2>
+    <div class="prose">
+      <p>
+        Campanha de artista quase sempre pede que o público assista. Aqui
+        ele <strong>trabalha</strong>. A cena abre completamente
+        congelada, sem dar nem pra saber quem está lá dentro, e cada
+        gesto de quem está do outro lado derrete um pouco do gelo. A
+        temperatura na tela sobe de −20&nbsp;°C a 0&nbsp;°C conforme o
+        esforço, e o que foi conquistado fica registrado.
+      </p>
+      <p>
+        Mas o gelo <strong>nunca quebra</strong>. Por mais que a pessoa
+        insista, as rachaduras se refazem e a tela responde
+        <em>“the ice holds”</em>, com a contagem de dias que faltam. Ele
+        só cede na data da campanha. É uma promessa que resiste, e um
+        motivo pra voltar amanhã.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Três instrumentos, três gestos</h2>
+    <div class="beats">
+      <article class="beat">
+        <span class="beat__n">01</span>
+        <h3>A mão</h3>
+        <p>
+          Arrastar limpa a condensação por onde o dedo passa, como num
+          vidro embaçado. O gelo reembaça sozinho depois de alguns
+          segundos, então nada fica resolvido de graça.
+        </p>
+      </article>
+      <article class="beat">
+        <span class="beat__n">02</span>
+        <h3>O martelo</h3>
+        <p>
+          Tocar crava uma trinca que nasce no ponto exato do toque e se
+          ramifica. Insistir leva o bloco ao limite, e é aí que ele
+          resiste e mostra quantos dias faltam.
+        </p>
+      </article>
+      <article class="beat">
+        <span class="beat__n">03</span>
+        <h3>O leque</h3>
+        <p>
+          Deslizar varre a névoa num arco largo e empurra os cristais na
+          direção do gesto. É o contraponto amplo ao toque pontual dos
+          outros dois.
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <h2>Decisões que sustentam a peça</h2>
+    <ul class="specs">
+      <li>
+        <b>Mobile primeiro</b>
+        <span>
+          A mecânica só existe porque existe dedo. No desktop funciona;
+          no celular ela faz sentido. A composição é remontada para o
+          formato vertical, não reduzida.
+        </span>
+      </li>
+      <li>
+        <b>Sem scroll</b>
+        <span>
+          Nada de parallax rolando. O único motor é o esforço do usuário,
+          o que torna o progresso dele e não da página.
+        </span>
+      </li>
+      <li>
+        <b>Ao vivo, não vídeo</b>
+        <span>
+          Gelo, condensação e rachaduras são compostos em tempo real em
+          camadas independentes. Trocar um asset não reescreve a
+          animação, então a arte pode mudar sem refazer a peça.
+        </span>
+      </li>
+      <li>
+        <b>Peso</b>
+        <span>
+          Toda a experiência cabe em poucas centenas de kilobytes de
+          imagem, com as texturas dimensionadas para o que a tela usa de
+          fato.
+        </span>
+      </li>
+      <li>
+        <b>Performance</b>
+        <span>
+          A condensação roda numa máscara de baixa resolução ampliada
+          pela GPU: a borda sai orgânica e o custo por quadro fica baixo
+          o suficiente para celular intermediário.
+        </span>
+      </li>
+      <li>
+        <b>Data real</b>
+        <span>
+          A trava lê o relógio do visitante: nos dias anteriores o gelo
+          vai enfraquecendo aos poucos, e quem voltar sente a diferença.
+        </span>
+      </li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>O que eu faço</h2>
+    <div class="prose">
+      <p>
+        Concebo e construo experiências web interativas para campanhas
+        de música, moda e entretenimento: da direção de arte à
+        implementação, incluindo o tratamento dos assets e a performance
+        no celular. Esta peça foi feita do conceito ao código.
+      </p>
+    </div>
+    <div class="contact" style="margin-top:2.4em">
+      <span class="eyebrow">Gabriella Costa</span>
+      <a href="mailto:gabip3@gmail.com">gabip3@gmail.com</a>
+      <a href="../?v=2" target="_blank" rel="noopener">Ver a demonstração</a>
+    </div>
+  </section>
+
+  <p class="foot">
+    Peça autoral, criada por iniciativa própria como demonstração de
+    capacidade técnica e criativa. A artista, o nome e o evento são
+    fictícios, e a figura na cena é um mockup gerado por IA. Conceito,
+    direção de arte e implementação de Gabriella Costa.
+  </p>
+
+</div>
+</body>
+</html>
