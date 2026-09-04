@@ -236,12 +236,12 @@ body {
   bottom: calc(var(--frame-pad) * .55);
   max-width: 46vw;
   text-align: right;
-  font-size: .46rem;
+  font-size: .62rem;
   font-weight: 300;
-  letter-spacing: .22em;
+  letter-spacing: .2em;
   line-height: 1.8;
   text-transform: uppercase;
-  color: rgba(156,195,224,.42);
+  color: rgba(190,220,242,.72);
   pointer-events: none;
 }
 
