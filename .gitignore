@@ -3,3 +3,7 @@ node_modules/
 Thumbs.db
 desktop.ini
 *.log
+
+# Bastidor — fica só no source privado
+assets/src/
+.claude/
